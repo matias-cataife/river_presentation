@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Analytics — Herramientas de Análisis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #FFFFFF;
+            --bg-card: #f8f9fa;
+            --bg-card-hover: #fff;
+            --accent-red: #E10600;
+            --accent-dark: #B00500;
+            --accent-light: #FF2D28;
+            --accent-glow: rgba(225, 6, 0, 0.15);
+            --accent-subtle: rgba(225, 6, 0, 0.06);
+            --text-primary: #0a0a0a;
+            --text-secondary: #333333;
+            --text-muted: #666666;
+            --border-color: #e5e5e5;
+            --border-accent: rgba(225, 6, 0, 0.2);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 30px rgba(0,0,0,0.08);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.1);
+            --shadow-accent: 0 8px 30px rgba(225, 6, 0, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ========== SLIDE ENGINE ========== */
+        .slides-container {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(80px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--bg-dark);
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .slide.prev {
+            transform: translateX(-80px);
+            opacity: 0;
+        }
+
+        /* Subtle background gradients */
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(circle at 15% 85%, rgba(225, 6, 0, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 85% 15%, rgba(225, 6, 0, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .slide.active .slide-content {
+            animation: fadeInUp 0.7s ease-out 0.15s both;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== TYPOGRAPHY ========== */
+        h1 {
+            font-size: 3.8rem;
+            font-weight: 800;
+            line-height: 1.05;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+        }
+
+        h1 .accent { color: var(--accent-red); }
+
+        h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+        }
+
+        h3 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        p {
+            font-size: 1.35rem;
+            line-height: 1.65;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .eyebrow {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-red);
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        /* ========== TITLE SLIDE ========== */
+        .slide.title-slide {
+            text-align: center;
+            background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+        }
+
+        .slide.title-slide::before {
+            background:
+                radial-gradient(circle at 50% 50%, rgba(225, 6, 0, 0.06) 0%, transparent 60%),
+                radial-gradient(circle at 20% 80%, rgba(225, 6, 0, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(225, 6, 0, 0.03) 0%, transparent 40%);
+        }
+
+        .slide.title-slide .slide-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 12px 40px rgba(225, 6, 0, 0.25);
+        }
+
+        .title-logo svg {
+            width: 44px;
+            height: 44px;
+            fill: white;
+        }
+
+        .slide.title-slide h1 {
+            font-size: 4.2rem;
+            max-width: 850px;
+        }
+
+        .title-divider {
+            width: 60px;
+            height: 4px;
+            background: var(--accent-red);
+            border-radius: 2px;
+            margin: 1.5rem auto;
+        }
+
+        .title-footer {
+            margin-top: 3rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .title-footer .tag {
+            padding: 0.5rem 1.2rem;
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        /* ========== CARDS ========== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.4rem;
+            transition: all 0.35s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-accent);
+            background: var(--bg-card-hover);
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            background: var(--accent-glow);
+            color: var(--accent-red);
+        }
+
+        .card h3 { font-size: 1.2rem; margin-bottom: 0.4rem; }
+        .card p { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0; line-height: 1.5; }
+
+        /* ========== STAT CARDS ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.8rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-accent);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent-red);
+            font-family: 'Space Mono', monospace;
+            line-height: 1;
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* ========== TWO COLUMNS ========== */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3.5rem;
+            align-items: center;
+        }
+
+        .two-columns.narrow-left {
+            grid-template-columns: 0.9fr 1.1fr;
+        }
+
+        .two-columns.narrow-right {
+            grid-template-columns: 1.1fr 0.9fr;
+        }
+
+        /* ========== AGENDA GRID ========== */
+        .agenda-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .agenda-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem 2rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agenda-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
+            background: var(--accent-red);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .agenda-card:hover {
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-accent);
+            transform: translateY(-3px);
+        }
+
+        .agenda-card:hover::after { opacity: 1; }
+
+        .agenda-number {
+            font-family: 'Space Mono', monospace;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--accent-red);
+            opacity: 0.15;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            line-height: 1;
+        }
+
+        .agenda-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .agenda-card p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        .agenda-card .agenda-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .agenda-card .agenda-tags .tag {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 100px;
+            background: var(--accent-glow);
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        /* ========== FEATURE LIST ========== */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 0.9rem 0;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            line-height: 1.5;
+        }
+
+        .feature-list li .check {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--accent-glow);
+            color: var(--accent-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* ========== HIGHLIGHT BOX ========== */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(225, 6, 0, 0.06) 0%, rgba(225, 6, 0, 0.02) 100%);
+            border: 1px solid rgba(225, 6, 0, 0.15);
+            border-radius: 16px;
+            padding: 2rem 2.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .highlight-box.big-stat {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .highlight-box .big-number {
+            font-size: 5rem;
+            font-weight: 900;
+            color: var(--accent-red);
+            font-family: 'Space Mono', monospace;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight-box .big-label {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* ========== PLACEHOLDER IMAGE ========== */
+        .placeholder-img {
+            background: linear-gradient(135deg, #f8f9fa 0%, rgba(225, 6, 0, 0.04) 100%);
+            border: 2px dashed rgba(225, 6, 0, 0.2);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .placeholder-img:hover {
+            border-color: var(--accent-red);
+            background: linear-gradient(135deg, #f8f9fa 0%, rgba(225, 6, 0, 0.08) 100%);
+        }
+
+        .placeholder-img .ph-icon {
+            font-size: 2.5rem;
+            opacity: 0.6;
+        }
+
+        .placeholder-img .ph-label {
+            font-size: 1rem;
+            color: var(--accent-red);
+            font-weight: 600;
+            opacity: 0.7;
+        }
+
+        .placeholder-img .ph-sublabel {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ========== IFRAME SLIDE ========== */
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 140px);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .iframe-overlay-label {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(225, 6, 0, 0.9);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10;
+            letter-spacing: 0.05em;
+            backdrop-filter: blur(4px);
+        }
+
+        /* ========== PROCESS STEPS ========== */
+        .process-steps {
+            display: flex;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .process-step {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.8rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .process-step:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-accent);
+        }
+
+        .process-step .step-num {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-red);
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .process-step h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .process-step p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+            line-height: 1.5;
+        }
+
+        /* Arrow connectors between steps */
+        .process-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -1rem;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-right: 2px solid var(--accent-red);
+            border-bottom: 2px solid var(--accent-red);
+            transform: translateY(-50%) rotate(-45deg);
+            opacity: 0.4;
+        }
+
+        /* ========== CLOSING SLIDE ========== */
+        .closing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin: 2.5rem 0;
+        }
+
+        .closing-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2.2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .closing-card:hover {
+            border-color: var(--accent-red);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-accent);
+        }
+
+        .closing-card .cc-icon {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .closing-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .closing-card p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+        }
+
+        /* ========== STAGGER ANIMATIONS ========== */
+        .stagger-item {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .slide.active .stagger-item {
+            animation: staggerIn 0.5s ease-out forwards;
+        }
+
+        .slide.active .stagger-item:nth-child(1) { animation-delay: 0.1s; }
+        .slide.active .stagger-item:nth-child(2) { animation-delay: 0.2s; }
+        .slide.active .stagger-item:nth-child(3) { animation-delay: 0.3s; }
+        .slide.active .stagger-item:nth-child(4) { animation-delay: 0.4s; }
+        .slide.active .stagger-item:nth-child(5) { animation-delay: 0.5s; }
+        .slide.active .stagger-item:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes staggerIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== SUBSTEP ANIMATIONS ========== */
+        .reveal-on-step { opacity: 0; transform: translateY(15px); transition: all 0.5s ease; }
+        [data-current-step="1"] .reveal-step-1,
+        [data-current-step="2"] .reveal-step-1,
+        [data-current-step="2"] .reveal-step-2,
+        [data-current-step="3"] .reveal-step-1,
+        [data-current-step="3"] .reveal-step-2,
+        [data-current-step="3"] .reveal-step-3,
+        [data-current-step="4"] .reveal-step-1,
+        [data-current-step="4"] .reveal-step-2,
+        [data-current-step="4"] .reveal-step-3,
+        [data-current-step="4"] .reveal-step-4,
+        [data-current-step="5"] .reveal-step-1,
+        [data-current-step="5"] .reveal-step-2,
+        [data-current-step="5"] .reveal-step-3,
+        [data-current-step="5"] .reveal-step-4,
+        [data-current-step="5"] .reveal-step-5,
+        [data-current-step="6"] .reveal-step-1,
+        [data-current-step="6"] .reveal-step-2,
+        [data-current-step="6"] .reveal-step-3,
+        [data-current-step="6"] .reveal-step-4,
+        [data-current-step="6"] .reveal-step-5,
+        [data-current-step="6"] .reveal-step-6 {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Reveal from left */
+        .reveal-on-step.reveal-from-left { transform: translateX(-20px); }
+        [data-current-step="1"] .reveal-from-left.reveal-step-1,
+        [data-current-step="2"] .reveal-from-left.reveal-step-1,
+        [data-current-step="2"] .reveal-from-left.reveal-step-2 {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Scale reveal for images — override translateY with scale */
+        .reveal-on-step.reveal-scale { transform: scale(0.95); }
+        [data-current-step="1"] .reveal-scale.reveal-step-1,
+        [data-current-step="2"] .reveal-scale.reveal-step-1,
+        [data-current-step="2"] .reveal-scale.reveal-step-2,
+        [data-current-step="3"] .reveal-scale.reveal-step-1,
+        [data-current-step="3"] .reveal-scale.reveal-step-2,
+        [data-current-step="3"] .reveal-scale.reveal-step-3,
+        [data-current-step="4"] .reveal-scale.reveal-step-1,
+        [data-current-step="4"] .reveal-scale.reveal-step-2,
+        [data-current-step="4"] .reveal-scale.reveal-step-3,
+        [data-current-step="4"] .reveal-scale.reveal-step-4 {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+
+
+        /* Debug overlay */
+        #keyDebug {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: var(--accent-red);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            z-index: 9999;
+            display: none;
+            white-space: pre;
+        }
+
+        /* ========== NAVIGATION ========== */
+        .nav-controls {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            border: 1.5px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-btn {
+            background: white;
+            border: 1.5px solid var(--border-color);
+            color: var(--text-muted);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+            box-shadow: 0 4px 15px rgba(225, 6, 0, 0.3);
+        }
+
+        .slide-counter {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            min-width: 50px;
+            text-align: center;
+        }
+
+        /* ========== PROGRESS BAR ========== */
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-red) 0%, var(--accent-light) 100%);
+            transition: width 0.4s ease;
+            z-index: 1000;
+        }
+
+        /* ========== SECTION INDICATOR ========== */
+        .section-indicator {
+            position: fixed;
+            top: 24px;
+            right: 28px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            border: 1.5px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        /* ========== BADGES ========== */
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge.red {
+            background: var(--accent-glow);
+            color: var(--accent-red);
+        }
+
+        .badge.gray {
+            background: #f0f0f0;
+            color: var(--text-muted);
+        }
+
+        /* ========== PIPELINE VIZ ========== */
+        .pipeline-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 2rem 0;
+        }
+
+        .pipeline-node {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.2rem 1.8rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+
+        .pipeline-node:hover {
+            border-color: var(--accent-red);
+            box-shadow: var(--shadow-accent);
+        }
+
+        .pipeline-node .pn-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+        .pipeline-node .pn-label { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+        .pipeline-node .pn-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+        .pipeline-arrow {
+            width: 40px;
+            height: 2px;
+            background: var(--accent-red);
+            position: relative;
+            opacity: 0.4;
+            flex-shrink: 0;
+        }
+
+        .pipeline-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid var(--accent-red);
+            border-bottom: 2px solid var(--accent-red);
+            transform: rotate(-45deg);
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1200px) {
+            .slide { padding: 40px 50px; }
+            h1 { font-size: 3rem; }
+            h2 { font-size: 2.2rem; }
+            .two-columns { gap: 2rem; }
+        }
+
+        /* ========== TABLE ========== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            padding: 1rem 1.2rem;
+            text-align: left;
+            background: var(--accent-glow);
+            color: var(--accent-dark);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table td {
+            padding: 0.85rem 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: rgba(225, 6, 0, 0.02); }
+
+        /* ========== METRIC PILLS ========== */
+        .metric-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin: 1rem 0;
+        }
+
+        .metric-pill {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .metric-pill:hover {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+
+        /* ========== CHAPTER COVER ========== */
+        .slide.chapter-cover {
+            text-align: center;
+            background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+        }
+
+        .slide.chapter-cover .slide-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .slide.chapter-cover .chapter-number {
+            font-family: 'Space Mono', monospace;
+            font-size: 6rem;
+            font-weight: 700;
+            color: var(--accent-red);
+            opacity: 0.12;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+
+        .slide.chapter-cover h2 {
+            font-size: 3.2rem;
+            max-width: 700px;
+        }
+
+        .slide.chapter-cover p {
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* ========== FULL IMAGE SLIDE ========== */
+        .full-img-slide {
+            padding: 30px 40px;
+        }
+
+        .full-img-slide .slide-content {
+            max-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .full-img-slide .rival-img {
+            flex: 1;
+            object-fit: contain;
+            max-height: calc(100vh - 160px);
+        }
+
+        /* ========== RIVAL ANALYSIS IMAGES ========== */
+        .rival-img {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .rival-img:hover {
+            box-shadow: var(--shadow-accent);
+            transform: scale(1.01);
+        }
+
+        .img-caption {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 0.6rem;
+            font-weight: 500;
+        }
+
+        .img-grid-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .img-grid-2x2 .img-cell {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ========== SCOUTING SCORE FORMULA ========== */
+        .formula-box {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .formula-part {
+            text-align: center;
+        }
+
+        .formula-part .fp-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-red);
+        }
+
+        .formula-part .fp-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        .formula-op {
+            font-size: 2rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* ========== SCORE BREAKDOWN CARDS ========== */
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .breakdown-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .breakdown-card:hover {
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .breakdown-card .bc-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .breakdown-card .bc-pct {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-red);
+        }
+
+        .breakdown-card .bc-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .breakdown-card .bc-desc {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .breakdown-card ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 0.8rem;
+        }
+
+        .breakdown-card ul li {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            padding: 0.3rem 0;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+
+        .breakdown-card ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.65rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            opacity: 0.4;
+        }
+        /* ========== LOGO FOOTER ========== */
+        .logo-footer {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 1000;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .logo-footer:hover {
+            opacity: 1;
+        }
+
+        .logo-footer img {
+            height: 55px;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="section-indicator" id="sectionIndicator"></div>
+
+    <div class="slides-container">
+
+        <!-- ==================== SLIDE 1: TITLE ==================== -->
+        <div class="slide title-slide active" data-section="Inicio">
+            <div class="slide-content">
+                <div class="title-logo">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                    </svg>
+                </div>
+                <h1>Inteligencia <span class="accent">Deportiva</span> Aplicada</h1>
+                <div class="title-divider"></div>
+                <p class="subtitle" style="max-width: 650px; margin-left: auto; margin-right: auto;">
+                    Herramientas de análisis de datos para potenciar la toma de decisiones en el fútbol profesional
+                </p>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: USE CASES ==================== -->
+        <div class="slide" data-section="Contexto" data-substeps="6" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">Contexto</span>
+                <h2>&iquest;Qu&eacute; puede hacer un equipo con datos?</h2>
+                <p style="max-width: 750px;">El an&aacute;lisis de datos ya no es exclusivo de los grandes clubes europeos. Estas son las &aacute;reas donde m&aacute;s impacto genera en el f&uacute;tbol profesional.</p>
+
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-top: 2rem;">
+                    <div class="card reveal-on-step reveal-step-1" style="border-color: var(--accent-red); background: var(--accent-subtle);">
+                        <div class="card-icon">&#128269;</div>
+                        <h3>Scouting</h3>
+                        <p>Evaluar miles de jugadores autom&aacute;ticamente y encontrar oportunidades antes que la competencia.</p>
+                    </div>
+                    <div class="card reveal-on-step reveal-step-1" style="border-color: var(--accent-red); background: var(--accent-subtle);">
+                        <div class="card-icon">&#9917;</div>
+                        <h3>Pelota Parada</h3>
+                        <p>Medir la peligrosidad real de corners, tiros libres y laterales. Comparar equipos y ejecutores.</p>
+                    </div>
+                    <div class="card reveal-on-step reveal-step-1" style="border-color: var(--accent-red); background: var(--accent-subtle);">
+                        <div class="card-icon">&#127919;</div>
+                        <h3>An&aacute;lisis del Rival</h3>
+                        <p>Informe pre-partido: c&oacute;mo juega, d&oacute;nde presiona, qui&eacute;nes son peligrosos.</p>
+                    </div>
+                    <div class="card reveal-on-step reveal-step-2">
+                        <div class="card-icon">&#129657;</div>
+                        <h3>Prevenci&oacute;n de lesiones</h3>
+                        <p>Monitorear carga f&iacute;sica y fatiga para reducir el riesgo de lesiones musculares.</p>
+                    </div>
+                    <div class="card reveal-on-step reveal-step-3">
+                        <div class="card-icon">&#128176;</div>
+                        <h3>Valuaci&oacute;n de mercado</h3>
+                        <p>Detectar jugadores subvalorados antes de que el mercado los descubra.</p>
+                    </div>
+                    <div class="card reveal-on-step reveal-step-4">
+                        <div class="card-icon">&#127793;</div>
+                        <h3>Desarrollo de cantera</h3>
+                        <p>Seguir la evoluci&oacute;n de juveniles con datos y detectar los de mayor proyecci&oacute;n.</p>
+                    </div>
+                    <div class="card reveal-on-step reveal-step-5">
+                        <div class="card-icon">&#127909;</div>
+                        <h3>Video automatizado</h3>
+                        <p>Etiquetar jugadas autom&aacute;ticamente con IA y generar clips para el cuerpo t&eacute;cnico.</p>
+                    </div>
+                    <div class="card reveal-on-step reveal-step-6">
+                        <div class="card-icon">&#128202;</div>
+                        <h3>An&aacute;lisis t&aacute;ctico en vivo</h3>
+                        <p>Dashboards en tiempo real durante el partido para ajustar formaci&oacute;n, cambios y estrategia.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2.5: TRABAJO CON UBA ==================== -->
+        <div class="slide" data-section="Modelo" data-substeps="4" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">Modelo de trabajo</span>
+                <h2>Trabajo con UBA Exactas</h2>
+                <p style="max-width: 800px;">Un convenio con la universidad que permite acceder a capacidad anal&iacute;tica de alto nivel sin necesidad de armar un equipo de datos completo.</p>
+
+                <div class="two-columns" style="margin-top: 2rem;">
+                    <div>
+                        <ul class="feature-list">
+                            <li class="reveal-on-step reveal-step-1">
+                                <span class="check">&#10003;</span>
+                                <span><strong>Equipo flexible:</strong> en lugar de contratar un departamento de datos full-time, el club incorpora 1 o 2 personas que coordinan estudiantes de grado y posgrado motivados por investigar en f&uacute;tbol profesional</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-2">
+                                <span class="check">&#10003;</span>
+                                <span><strong>Propuestas de valor continuas:</strong> los estudiantes generan proyectos de investigaci&oacute;n aplicada que se traducen en herramientas y an&aacute;lisis concretos para el cuerpo t&eacute;cnico</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-3">
+                                <span class="check">&#10003;</span>
+                                <span><strong>Costo eficiente:</strong> se obtiene capacidad equivalente a un equipo de datos por una fracci&oacute;n del costo, aprovechando el talento acad&eacute;mico de Exactas</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="reveal-on-step reveal-step-4">
+                        <div class="highlight-box">
+                            <h3 style="color: var(--accent-red); margin-bottom: 0.8rem;">&#9888; Requisito indispensable</h3>
+                            <p style="font-size: 1.05rem; line-height: 1.6;">Para que cualquier an&aacute;lisis sea posible se necesita acceso a <strong>datos evento-a-evento detallados</strong> (tipo Opta, StatsBomb, etc.).</p>
+                            <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 0.6rem;">Todos los clubes que invierten en data a nivel profesional ya cuentan con este tipo de proveedor.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: AGENDA ==================== -->
+        <div class="slide" data-section="Agenda">
+            <div class="slide-content">
+                <span class="eyebrow">Agenda</span>
+                <h2>Tres herramientas, un objetivo</h2>
+                <p style="max-width: 700px;">Soluciones concretas y operativas que transforman datos en ventaja competitiva.</p>
+
+                <div class="agenda-grid">
+                    <div class="agenda-card stagger-item">
+                        <div class="agenda-number">01</div>
+                        <h3>Scouting Tool</h3>
+                        <p>Sistema de evaluaci&oacute;n integral de jugadores que combina rendimiento deportivo con perfil de mercado para identificar oportunidades de fichaje.</p>
+                        <div class="agenda-tags">
+                            <span class="tag">180+ m&eacute;tricas</span>
+                            <span class="tag">9 posiciones</span>
+                            <span class="tag">Dashboard interactivo</span>
+                        </div>
+                    </div>
+                    <div class="agenda-card stagger-item">
+                        <div class="agenda-number">02</div>
+                        <h3>Pelota Parada</h3>
+                        <p>An&aacute;lisis de jugadas a bal&oacute;n parado que mide la peligrosidad real de cada ejecuci&oacute;n y compara equipos a nivel global.</p>
+                        <div class="agenda-tags">
+                            <span class="tag">Benchmark global</span>
+                            <span class="tag">Informe rival</span>
+                        </div>
+                    </div>
+                    <div class="agenda-card stagger-item">
+                        <div class="agenda-number">03</div>
+                        <h3>An&aacute;lisis del Rival</h3>
+                        <p>Informe pre-partido completo: c&oacute;mo juega el pr&oacute;ximo rival, d&oacute;nde presiona, qui&eacute;nes son sus jugadores clave y c&oacute;mo ataca en jugadas de esquina.</p>
+                        <div class="agenda-tags">
+                            <span class="tag">Estilo de juego</span>
+                            <span class="tag">Jugadores clave</span>
+                            <span class="tag">Corners</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: SCOUTING - COVER ==================== -->
+        <div class="slide chapter-cover" data-section="Scouting">
+            <div class="slide-content">
+                <div class="chapter-number">01</div>
+                <h2>Scouting Tool</h2>
+                <div class="title-divider"></div>
+                <p>Sistema de evaluaci&oacute;n de jugadores que combina rendimiento deportivo con perfil de mercado para identificar oportunidades de fichaje.</p>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: SCOUTING - THE PROBLEM ==================== -->
+        <div class="slide" data-section="Scouting" data-substeps="4" data-current-step="0">
+            <div class="slide-content">
+                <div class="two-columns">
+                    <div>
+                        <span class="eyebrow">01 &mdash; Scouting Tool</span>
+                        <h2>El desaf&iacute;o de fichar bien</h2>
+                        <p>Miles de jugadores. Decenas de ligas. Presupuesto limitado. &iquest;C&oacute;mo asegurarse de que la pr&oacute;xima incorporaci&oacute;n sea la correcta?</p>
+
+                        <ul class="feature-list" style="margin-top: 1.5rem;">
+                            <li class="reveal-on-step reveal-step-1">
+                                <span class="check">1</span>
+                                <span><strong>Volumen:</strong> es imposible ver todos los jugadores manualmente en todas las ligas relevantes</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-2">
+                                <span class="check">2</span>
+                                <span><strong>Subjetividad:</strong> las evaluaciones dependen del ojo del scout y su criterio individual</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-3">
+                                <span class="check">3</span>
+                                <span><strong>Timing:</strong> cuando un jugador se hace visible para todos, el precio ya subi&oacute;</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="reveal-on-step reveal-step-4">
+                        <div class="highlight-box big-stat">
+                            <div class="big-number">2000+</div>
+                            <div class="big-label">jugadores evaluados autom&aacute;ticamente cada temporada</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: SCOUTING - HOW IT WORKS ==================== -->
+        <div class="slide" data-section="Scouting" data-substeps="4" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">01 &mdash; Scouting Tool</span>
+                <h2>&iquest;C&oacute;mo funciona?</h2>
+                <p>Cada jugador recibe un <strong>Scouting Score</strong> (0 a 1) que combina qu&eacute; tan bien juega con qu&eacute; tan atractivo es como fichaje.</p>
+
+                <div class="two-columns" style="margin-top: 2rem;">
+                    <div>
+                        <ul class="feature-list">
+                            <li class="reveal-on-step reveal-step-1">
+                                <span class="check">&#10003;</span>
+                                <span><strong>Rendimiento deportivo:</strong> an&aacute;lisis de 180+ m&eacute;tricas por 90 minutos comparadas entre todos los jugadores de la misma posici&oacute;n</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-2">
+                                <span class="check">&#10003;</span>
+                                <span><strong>Perfil de mercado:</strong> factores como edad, pasaporte, nivel de liga y valor de mercado que determinan si es una oportunidad real de fichaje</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-3">
+                                <span class="check">&#10003;</span>
+                                <span><strong>Modelo por posici&oacute;n:</strong> cada rol tiene su propio modelo de evaluaci&oacute;n adaptado a lo que se espera de esa posici&oacute;n en cancha</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="reveal-on-step reveal-step-4">
+                        <div class="highlight-box" style="margin: 0;">
+                            <h3 style="color: var(--accent-red); font-size: 1.3rem; margin-bottom: 0.8rem;">Score combinado</h3>
+                            <p style="font-size: 1.1rem; margin-bottom: 0;">
+                                El score final integra rendimiento en cancha con perfil de mercado en una m&eacute;trica &uacute;nica y comparable. Cuanto m&aacute;s alto el score, m&aacute;s interesante es el jugador como potencial fichaje.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: SCOUTING - LIVE DEMO ==================== -->
+
+        <div class="slide demo-slide" data-section="Scouting" style="padding: 20px 30px;">
+            <div class="slide-content" style="max-width: 100%; height: 100%; display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div>
+                        <span class="eyebrow" style="margin-bottom: 0;">01 &mdash; Scouting Tool</span>
+                        <h3 style="margin-bottom: 0; font-size: 1.3rem;">Dashboard Interactivo</h3>
+                    </div>
+                </div>
+                <div class="iframe-container" style="flex: 1;">
+                    <iframe src="scouting_embed.html" loading="lazy"></iframe>
+                    <div class="iframe-overlay-label">Scouting Report</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 8: PELOTA PARADA - COVER ==================== -->
+        <div class="slide chapter-cover" data-section="Pelota Parada">
+            <div class="slide-content">
+                <div class="chapter-number">02</div>
+                <h2>Pelota Parada</h2>
+                <div class="title-divider"></div>
+                <p>An&aacute;lisis de jugadas a bal&oacute;n parado que mide la peligrosidad real de cada ejecuci&oacute;n y compara equipos a nivel global.</p>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 9: SET PIECE - THE PROBLEM ==================== -->
+        <div class="slide" data-section="Pelota Parada" data-substeps="4" data-current-step="0">
+            <div class="slide-content">
+                <div class="two-columns">
+                    <div>
+                        <span class="eyebrow">02 &mdash; Pelota Parada</span>
+                        <h2>La ventaja que pocos explotan</h2>
+                        <p>Las jugadas a bal&oacute;n parado son la forma m&aacute;s directa y entrenable de generar gol. Sin embargo, la mayor&iacute;a de los clubes no las analizan con profundidad.</p>
+
+                        <ul class="feature-list" style="margin-top: 1.5rem;">
+                            <li class="reveal-on-step reveal-step-1">
+                                <span class="check">1</span>
+                                <span>&iquest;Cu&aacute;nto valen realmente tus corners? &iquest;Son peligrosos o se pierden?</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-2">
+                                <span class="check">2</span>
+                                <span>&iquest;Qui&eacute;n es tu mejor ejecutor y por qu&eacute;?</span>
+                            </li>
+                            <li class="reveal-on-step reveal-step-3">
+                                <span class="check">3</span>
+                                <span>&iquest;C&oacute;mo atacan los corners tus pr&oacute;ximos rivales?</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="reveal-on-step reveal-step-4">
+                        <div class="highlight-box big-stat">
+                            <div class="big-number">~30%</div>
+                            <div class="big-label">de los goles en f&uacute;tbol profesional nacen de pelota parada</div>
+                        </div>
+                        <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="stat-card">
+                                <div class="stat-value">28</div>
+                                <div class="stat-label">ligas</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">4</div>
+                                <div class="stat-label">tipos de jugada</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 7: SET PIECE - HOW IT WORKS ==================== -->
+        <div class="slide" data-section="Pelota Parada" data-substeps="2" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">02 &mdash; Pelota Parada</span>
+                <h2>&iquest;Qu&eacute; medimos?</h2>
+                <p>Cada jugada de pelota parada se descompone en una <strong>secuencia de acciones</strong>. Medimos la peligrosidad de toda la secuencia, no solo del remate final.</p>
+
+                <div class="pipeline-row reveal-on-step reveal-step-1" style="margin-top: 2.5rem;">
+                    <div class="pipeline-node stagger-item">
+                        <div class="pn-icon">&#9917;</div>
+                        <div class="pn-label">Ejecuci&oacute;n</div>
+                        <div class="pn-sub">Corner / TL / Lateral / SA</div>
+                    </div>
+                    <div class="pipeline-arrow"></div>
+                    <div class="pipeline-node stagger-item">
+                        <div class="pn-icon">&#128200;</div>
+                        <div class="pn-label">Secuencia</div>
+                        <div class="pn-sub">Pases, cabezazos, rechazos</div>
+                    </div>
+                    <div class="pipeline-arrow"></div>
+                    <div class="pipeline-node stagger-item" style="border-color: var(--accent-red); background: var(--accent-glow);">
+                        <div class="pn-icon">&#127919;</div>
+                        <div class="pn-label" style="color: var(--accent-red);">Peligrosidad</div>
+                        <div class="pn-sub">Score de la jugada completa</div>
+                    </div>
+                </div>
+
+                <div class="two-columns reveal-on-step reveal-step-2" style="margin-top: 2.5rem;">
+                    <div class="highlight-box" style="margin: 0;">
+                        <h3 style="color: var(--accent-red); font-size: 1.3rem; margin-bottom: 0.8rem;">Peligrosidad de la secuencia completa</h3>
+                        <p style="font-size: 1.1rem; margin-bottom: 0;">
+                            No medimos solo si termin&oacute; en gol: capturamos <strong>cu&aacute;n cerca estuvo de generar da&ntilde;o</strong> cada jugada. Esto permite comparar ejecutores, equipos y ligas en una misma escala objetiva.
+                        </p>
+                    </div>
+                    <div>
+                        <h3>4 tipos de jugada analizados</h3>
+                        <ul class="feature-list">
+                            <li><span class="check">&#9917;</span><span><strong>Corners</strong></span></li>
+                            <li><span class="check">&#9917;</span><span><strong>Tiros libres</strong></span></li>
+                            <li><span class="check">&#9917;</span><span><strong>Laterales</strong> en campo rival</span></li>
+                            <li><span class="check">&#9917;</span><span><strong>Saques de arco</strong></span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 8: SET PIECE - TEAM BENCHMARKING ==================== -->
+        <div class="slide" data-section="Pelota Parada" data-substeps="2" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">02 &mdash; Pelota Parada</span>
+                <h2>Benchmark global de equipos</h2>
+                <p>&iquest;C&oacute;mo se compara tu equipo contra los mejores del mundo en pelota parada?  An&aacute;lisis comparativo de <strong>28 ligas</strong> en una sola plataforma.</p>
+
+                <div class="two-columns" style="margin-top: 2rem;">
+                    <div class="reveal-on-step reveal-scale reveal-step-1">
+                        <img src="pelota_parada/analisis_corner_river.png" alt="Comparativa de equipos — corners" class="rival-img">
+                        <div class="img-caption">Ejemplo: Total ejecutados vs peligrosidad por partido &mdash; Liga Argentina</div>
+                    </div>
+                    <div class="reveal-on-step reveal-step-2">
+                        <h3>Qu&eacute; pod&eacute;s ver</h3>
+                        <ul class="feature-list">
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span><strong>Ranking global:</strong> qu&eacute; equipos del mundo son m&aacute;s peligrosos en pelota parada</span>
+                            </li>
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span><strong>Comparaci&oacute;n por liga:</strong> tu equipo vs. el promedio de tu liga y contra otras ligas</span>
+                            </li>
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span><strong>Ranking de ejecutores:</strong> los mejores tiradores de corners, TL y laterales del mundo</span>
+                            </li>
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span><strong>Evoluci&oacute;n temporal:</strong> c&oacute;mo cambia la efectividad a lo largo de la temporada</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SET PIECE - CORNER MAP + METRICS ==================== -->
+        <div class="slide" data-section="Pelota Parada">
+            <div class="slide-content">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div>
+                        <span class="eyebrow" style="margin-bottom: 0;">02 &mdash; Pelota Parada</span>
+                        <h3 style="margin-bottom: 0; font-size: 1.3rem;">D&oacute;nde caen los corners del rival</h3>
+                    </div>
+                    <span class="badge red">EJEMPLO &mdash; SARMIENTO</span>
+                </div>
+                <div style="display: flex; gap: 2rem; flex: 1; align-items: stretch; min-height: 0;">
+                    <!-- Left: metrics -->
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1rem;">
+                        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">Corners defensivos de <strong>Sarmiento</strong> &mdash; comparados contra la media de la liga.</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.2rem;">
+                                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">418</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">Corners concedidos</div>
+                                <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-red); margin-top: 4px;">+31.7% vs media</div>
+                            </div>
+                            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.2rem;">
+                                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">10</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">Goles recibidos</div>
+                                <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-red); margin-top: 4px;">+16.8% vs media</div>
+                            </div>
+                            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.2rem;">
+                                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">2.4%</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">Tasa de gol</div>
+                                <div style="font-size: 0.8rem; font-weight: 600; color: #16a34a; margin-top: 4px;">-11.3% vs media</div>
+                            </div>
+                            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem 1.2rem;">
+                                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">153</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">Corners con remate</div>
+                                <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-red); margin-top: 4px;">+41.8% vs media</div>
+                            </div>
+                        </div>
+                        <div style="background: var(--accent-subtle); border: 1px solid var(--border-accent); border-radius: 12px; padding: 1rem 1.2rem; margin-top: 0.3rem;">
+                            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                                <span style="font-size: 1.8rem; font-weight: 700; color: var(--accent-red);">12.53</span>
+                                <span style="font-size: 0.95rem; color: var(--text-secondary);">xG concedido desde corners</span>
+                            </div>
+                            <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-red); margin-top: 4px;">+33.7% vs media de la liga</div>
+                        </div>
+                    </div>
+                    <!-- Right: image -->
+                    <div style="flex: 0 0 45%; display: flex; flex-direction: column; min-height: 0;">
+                        <img src="pelota_parada/shot_map_corners.png" alt="Mapa de tiros desde corners del rival" class="rival-img" style="flex: 1; object-fit: contain; max-height: calc(100vh - 200px); display: block;">
+                        <div class="img-caption" style="text-align: center;">Cada punto es un tiro generado desde un corner rival.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SET PIECE - RIVAL WORKFLOW ==================== -->
+        <div class="slide" data-section="Pelota Parada">
+            <div class="slide-content">
+                <span class="eyebrow">02 &mdash; Pelota Parada</span>
+                <h2>Informe pre-partido</h2>
+                <p>Antes de cada partido, un informe detallado de c&oacute;mo el rival ejecuta sus jugadas de pelota parada: d&oacute;nde env&iacute;a la pelota, qu&eacute; secuencias repite, cu&aacute;les son peligrosas.</p>
+
+                <div class="two-columns" style="margin-top: 1.5rem;">
+                    <div>
+                        <img src="pelota_parada/analisis_secuencia_sarmiento.png" alt="Secuencia de corner — Sarmiento" class="rival-img">
+                        <div class="img-caption">Ejemplo: secuencia de gol de corner &mdash; Talleres vs Sarmiento</div>
+                    </div>
+                    <div>
+                        <div class="process-steps" style="flex-direction: column; gap: 1rem; margin: 0;">
+                            <div class="process-step stagger-item">
+                                <span class="step-num">D&iacute;a -3</span>
+                                <h4>Selecci&oacute;n del rival</h4>
+                                <p>Se elige el equipo y la ventana de partidos a analizar</p>
+                            </div>
+                            <div class="process-step stagger-item">
+                                <span class="step-num">Autom&aacute;tico</span>
+                                <h4>Procesamiento</h4>
+                                <p>El sistema genera todas las visualizaciones y m&eacute;tricas del rival</p>
+                            </div>
+                            <div class="process-step stagger-item">
+                                <span class="step-num">D&iacute;a -2</span>
+                                <h4>Informe pre-partido</h4>
+                                <p>PDF o dashboard listo para el cuerpo t&eacute;cnico</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== RIVAL - COVER ==================== -->
+        <div class="slide chapter-cover" data-section="An&aacute;lisis Rival">
+            <div class="slide-content">
+                <div class="chapter-number">03</div>
+                <h2>An&aacute;lisis del Pr&oacute;ximo Rival</h2>
+                <div class="title-divider"></div>
+                <p>Informe pre-partido completo: c&oacute;mo juega el rival, d&oacute;nde presiona, qui&eacute;nes son peligrosos y c&oacute;mo ataca en corners. Ejemplo: FC Barcelona.</p>
+            </div>
+        </div>
+
+        <!-- ==================== RIVAL - STYLE MAP (FULL SCREEN) ==================== -->
+        <div class="slide full-img-slide" data-section="An&aacute;lisis Rival">
+            <div class="slide-content">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div>
+                        <span class="eyebrow" style="margin-bottom: 0;">03 &mdash; FC Barcelona</span>
+                        <h3 style="margin-bottom: 0; font-size: 1.3rem;">Mapa de estilo ofensivo vs defensivo</h3>
+                    </div>
+                    <span class="badge red">EJEMPLO</span>
+                </div>
+                <img src="mapa_of_def.jpeg" alt="Mapa ofensivo vs defensivo — Barcelona" class="rival-img" style="flex: 1; object-fit: contain; max-height: calc(100vh - 160px);">
+                <div class="img-caption">Cada punto es un equipo de la liga. Barcelona (rojo) se ubica en el cuadrante m&aacute;s asociativo y presionante (Q1).</div>
+            </div>
+        </div>
+
+        <!-- ==================== RIVAL - STRATEGIC DIAGNOSIS ==================== -->
+        <div class="slide" data-section="An&aacute;lisis Rival" data-substeps="2" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">03 &mdash; FC Barcelona</span>
+                <h2>Diagn&oacute;stico y estrategia sugerida</h2>
+                <p>A partir del mapa de estilos, el sistema identifica c&oacute;mo juega el rival y sugiere qu&eacute; enfoque usar para contrarrestarlo.</p>
+
+                <div class="two-columns" style="margin-top: 2rem;">
+                    <div class="reveal-on-step reveal-scale reveal-step-1">
+                        <img src="analisis_estrategico.jpeg" alt="An&aacute;lisis estrat&eacute;gico — Barcelona" class="rival-img">
+                        <div class="img-caption">Diagn&oacute;stico autom&aacute;tico y recomendaciones</div>
+                    </div>
+                    <div class="reveal-on-step reveal-step-2">
+                        <ul class="feature-list">
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span>Clasifica al rival seg&uacute;n su estilo de juego real (no por reputaci&oacute;n)</span>
+                            </li>
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span>Compara contra todos los equipos de la liga en la misma escala</span>
+                            </li>
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span>Sugiere qu&eacute; formaci&oacute;n y estilo hist&oacute;ricamente funcionan mejor contra ese perfil</span>
+                            </li>
+                            <li>
+                                <span class="check">&#10003;</span>
+                                <span>Analiza el historial espec&iacute;fico contra ese rival en particular</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 11: RIVAL - PRESSURE & PLAYERS ==================== -->
+        <div class="slide" data-section="An&aacute;lisis Rival" data-substeps="2" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">03 &mdash; An&aacute;lisis del Pr&oacute;ximo Rival &mdash; FC Barcelona</span>
+                <h2>Presi&oacute;n y jugadores clave</h2>
+                <p>&iquest;D&oacute;nde presiona el rival? &iquest;Qui&eacute;nes son los que m&aacute;s recuperan la pelota y c&oacute;mo lo hacen?</p>
+
+                <div class="two-columns" style="margin-top: 1.5rem;">
+                    <div class="reveal-on-step reveal-scale reveal-step-1">
+                        <img src="mapa_presion.jpeg" alt="Mapa de presi&oacute;n — Barcelona" class="rival-img">
+                        <div class="img-caption">Mapa de presi&oacute;n por zona: d&oacute;nde y qui&eacute;n presiona m&aacute;s</div>
+                    </div>
+                    <div class="reveal-on-step reveal-scale reveal-step-2">
+                        <img src="player_analyisis.jpeg" alt="An&aacute;lisis de jugadores — Barcelona" class="rival-img">
+                        <div class="img-caption">Ranking de jugadores: presi&oacute;n y recuperaciones exitosas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 16: RIVAL - WINNING VS LOSING ==================== -->
+        <div class="slide" data-section="An&aacute;lisis Rival" data-substeps="1" data-current-step="0">
+            <div class="slide-content">
+                <span class="eyebrow">03 &mdash; An&aacute;lisis del Pr&oacute;ximo Rival &mdash; FC Barcelona</span>
+                <h2>&iquest;Qu&eacute; cambia cuando van ganando o perdiendo?</h2>
+                <p>Identificamos qu&eacute; comportamientos cambian en la liga seg&uacute;n el estado del partido. Esto permite anticipar c&oacute;mo va a reaccionar el rival si va arriba o abajo en el marcador.</p>
+
+                <div class="reveal-on-step reveal-scale reveal-step-1" style="margin-top: 1.5rem; text-align: center;">
+                    <img src="dif_ganando_perdiendo.jpeg" alt="Diferencias ganando vs perdiendo — La Liga" class="rival-img" style="max-height: calc(100vh - 300px); width: auto; margin: 0 auto; display: block;">
+                    <div class="img-caption">En verde, lo que aumenta cuando van ganando. En rojo, lo que disminuye.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== FORMATIVAS - PREVIEW ==================== -->
+        <div class="slide" data-section="Formativas">
+            <div class="slide-content">
+                <span class="eyebrow">Pr&oacute;ximamente</span>
+                <h2>Divisiones <span class="accent">Formativas</span></h2>
+                <p style="color: var(--text-muted); max-width: 600px;">Lo que ya estamos haciendo en inferiores de Racing con datos.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 2rem; max-width: 700px;">
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 0.8rem;">
+                        <span style="font-size: 1.4rem;">&#128202;</span>
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">Seguimiento f&iacute;sico por categor&iacute;a</span>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 0.8rem;">
+                        <span style="font-size: 1.4rem;">&#127942;</span>
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">Scouting interno de juveniles</span>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 0.8rem;">
+                        <span style="font-size: 1.4rem;">&#9889;</span>
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">Reportes de rendimiento individual</span>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 0.8rem;">
+                        <span style="font-size: 1.4rem;">&#128640;</span>
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">Proyecci&oacute;n y desarrollo de talentos</span>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 0.8rem;">
+                        <span style="font-size: 1.4rem;">&#128203;</span>
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">An&aacute;lisis t&aacute;ctico adaptado por edad</span>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 0.8rem;">
+                        <span style="font-size: 1.4rem;">&#128218;</span>
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">Base de datos centralizada de formativas</span>
+                    </div>
+                </div>
+
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1.5rem; font-style: italic;">Detalle en la pr&oacute;xima presentaci&oacute;n.</p>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 14: CLOSING ==================== -->
+        <div class="slide title-slide" data-section="Cierre">
+            <div class="slide-content">
+                <span class="eyebrow">Resumen</span>
+                <h1>Datos que generan <span class="accent">ventaja</span></h1>
+                <div class="title-divider"></div>
+                <p class="subtitle" style="max-width: 650px; margin-left: auto; margin-right: auto;">
+                    Herramientas probadas, operativas y listas para adaptar a la realidad del club.
+                </p>
+
+                <div class="closing-grid" style="max-width: 900px; margin-left: auto; margin-right: auto; margin-top: 2.5rem;">
+                    <div class="closing-card stagger-item">
+                        <div class="cc-icon">&#128269;</div>
+                        <h3>Scouting</h3>
+                        <p>Identificar oportunidades antes que la competencia</p>
+                    </div>
+                    <div class="closing-card stagger-item">
+                        <div class="cc-icon">&#9917;</div>
+                        <h3>Pelota Parada</h3>
+                        <p>Optimizar la v&iacute;a m&aacute;s directa al gol</p>
+                    </div>
+                    <div class="closing-card stagger-item">
+                        <div class="cc-icon">&#127919;</div>
+                        <h3>An&aacute;lisis Rival</h3>
+                        <p>Llegar al partido sabiendo c&oacute;mo juega el rival</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigation -->
+
+
+    <!-- Debug overlay for remote testing -->
+    <div id="keyDebug"></div>
+
+    <script>
+        let currentSlide = 0;
+        let debugMode = false;
+        const debugOverlay = document.getElementById('keyDebug');
+
+        function initSlides() {
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach((slide, i) => {
+                if (i === 0) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            updateUI();
+        }
+
+        function updateUI() {
+            const slides = document.querySelectorAll('.slide');
+            const total = slides.length;
+            const progress = ((currentSlide + 1) / total) * 100;
+
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('slideCounter').textContent = (currentSlide + 1) + ' / ' + total;
+
+            const section = slides[currentSlide].dataset.section || '';
+            document.getElementById('sectionIndicator').textContent = section;
+        }
+
+        function resetSubsteps(slide) {
+            if (slide.dataset.substeps) {
+                slide.dataset.currentStep = '0';
+            }
+        }
+
+        function goToSlide(index) {
+            const slides = document.querySelectorAll('.slide');
+            if (index === currentSlide || index < 0 || index >= slides.length) return;
+
+            // Reset substeps on the slide we're leaving
+            resetSubsteps(slides[currentSlide]);
+
+            slides[currentSlide].classList.remove('active');
+            slides[currentSlide].classList.add('prev');
+
+            const prevIndex = currentSlide;
+            setTimeout(() => {
+                slides[prevIndex].classList.remove('prev');
+            }, 600);
+
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            updateUI();
+        }
+
+        function nextSlide() {
+            const slides = document.querySelectorAll('.slide');
+            const active = slides[currentSlide];
+
+            // Handle substeps: advance step before moving to next slide
+            if (active.dataset.substeps) {
+                const step = parseInt(active.dataset.currentStep) || 0;
+                const max = parseInt(active.dataset.substeps) || 0;
+                if (step < max) {
+                    active.dataset.currentStep = step + 1;
+                    return;
+                }
+            }
+
+            if (currentSlide < slides.length - 1) {
+                goToSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            const slides = document.querySelectorAll('.slide');
+            const active = slides[currentSlide];
+
+            // Handle substeps: go back one step before moving to prev slide
+            if (active.dataset.substeps) {
+                const step = parseInt(active.dataset.currentStep) || 0;
+                if (step > 0) {
+                    active.dataset.currentStep = step - 1;
+                    return;
+                }
+            }
+
+            if (currentSlide > 0) {
+                goToSlide(currentSlide - 1);
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            // Debug overlay
+            if (debugMode) {
+                debugOverlay.textContent = `Key: "${e.key}"  Code: "${e.code}"  KeyCode: ${e.keyCode}`;
+            }
+
+            // Toggle debug mode
+            if (e.key === 'd' || e.key === 'D') {
+                debugMode = !debugMode;
+                debugOverlay.style.display = debugMode ? 'block' : 'none';
+                return;
+            }
+
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' ||
+                e.key === 'Enter' || e.key === 'n' || e.key === 'N' ||
+                e.code === 'Space' || e.code === 'PageDown') {
+                e.preventDefault();
+                nextSlide();
+            }
+            else if (e.key === 'ArrowLeft' || e.key === 'PageUp' ||
+                     e.key === 'Backspace' || e.key === 'p' || e.key === 'P' ||
+                     e.code === 'PageUp') {
+                e.preventDefault();
+                prevSlide();
+            }
+            else if (e.key === 'Home') {
+                e.preventDefault();
+                goToSlide(0);
+            }
+            else if (e.key === 'End') {
+                e.preventDefault();
+                const slides = document.querySelectorAll('.slide');
+                goToSlide(slides.length - 1);
+            }
+            else if (e.key === 'F5' || e.key === 'f' || e.key === 'F') {
+                e.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+            else if (e.key === 'Escape') {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        // Click to advance (avoid nav controls and iframe)
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.nav-controls') &&
+                !e.target.closest('a') &&
+                !e.target.closest('button') &&
+                !e.target.closest('iframe') &&
+                !e.target.closest('.iframe-container')) {
+                nextSlide();
+            }
+        });
+
+        // Touch support
+        let touchStartX = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            const diff = touchStartX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 60) {
+                if (diff > 0) nextSlide();
+                else prevSlide();
+            }
+        }, { passive: true });
+
+        window.addEventListener('load', initSlides);
+    </script>
+    <div class="logo-footer">
+        <img src="logo_exactas.png" alt="Logo Exactas">
+        <img src="logo_icc.svg" alt="Logo ICC">
+    </div>
+</body>
+</html>
